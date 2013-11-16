@@ -1,4 +1,4 @@
-<a ng-href="#/new">New</a>
+<a ng-show="user" ng-href="#/new">New</a>
 
 <table class="table">
   <tr>
@@ -10,8 +10,10 @@
     <td><a ng-href="#/item/{{k}}">{{k}}</a></td>
     <td>{{v.name}}</td>
     <td>
-      <a ng-href="#/edit/{{k}}">Edit</a>
-      <a ng-href="#/delete/{{k}}">Delete</a>
+      <div ng-show="user">
+        <a ng-href="#/edit/{{k}}">Edit</a>
+        <a ng-href="#/delete/{{k}}">Delete</a>
+      </div>
     </td>
   </tr>
 </table>

@@ -1,4 +1,8 @@
 <h3>{{item.name}}</h3>
 
+<div ng-show="user">
+  <a ng-href="#/edit/{{k}}">Edit</a>
+  <a ng-href="#/delete/{{k}}">Delete</a>
+</div>
 <a ng-href="#/list">Back</a>
 
