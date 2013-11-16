@@ -1,0 +1,19 @@
+<a ng-href="#/new">New</a>
+
+<table class="table">
+  <tr>
+    <th>Id</th>
+    <th>Name</th>
+    <th>Options</th>
+  </tr>
+  <tr ng-repeat="(k, v) in items">
+    <td><a ng-href="#/item/{{k}}">{{k}}</a></td>
+    <td>{{v.name}}</td>
+    <td>
+      <a ng-href="#/edit/{{k}}">Edit</a>
+      <a ng-href="#/delete/{{k}}">Delete</a>
+    </td>
+  </tr>
+</table>
+
+
