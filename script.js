@@ -112,8 +112,8 @@
       $scope.isNew = true;
       $scope.save = function () {
         $scope.item.uid = $scope.user.id;
-        itemSvc.$add($scope.item);
-        $location.path('/list');
+        var ref = itemSvc.$add($scope.item);
+        $location.path('/item/' + ref.name());
       };
 /*
       $scope.save = function () {
@@ -130,7 +130,7 @@
       $scope.item = itemSvc.$child($routeParams.id);
       $scope.update = function () {
         $scope.item.$save();
-        $location.path('/list');
+        $location.path('/item/' + $routeParams.id);
       };
 /*
       $scope.update = function () {

@@ -100,11 +100,13 @@ AngularFire.prototype = {
     // Add an object to the remote data. Adding an object is the
     // equivalent of calling `push()` on a Firebase reference.
     object.$add = function(item) {
-      if (typeof item == "object") {
-        self._fRef.ref().push(self._parseObject(item));
+      var newRef;
+      if (typeof item === "object") {
+        newRef = self._fRef.ref().push(self._parseObject(item));
       } else {
-        self._fRef.ref().push(item);
+        newRef = self._fRef.ref().push(item);
       }
+      return newRef;
     };
 
     // Save the current state of the object (or a child) to the remote.
