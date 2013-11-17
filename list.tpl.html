@@ -6,13 +6,13 @@
     <th>Name</th>
     <th>Options</th>
   </tr>
-  <tr ng-repeat="(k, v) in items">
-    <td><a ng-href="#/item/{{k}}">{{k}}</a></td>
-    <td>{{v.name}}</td>
+  <tr ng-repeat="item in items | orderByPriority">
+    <td><a ng-href="#/item/{{item.$id}}">{{item.$id}}</a></td>
+    <td>{{item.name}}</td>
     <td>
       <div ng-show="user">
-        <a ng-href="#/edit/{{k}}">Edit</a>
-        <a ng-href="#/delete/{{k}}">Delete</a>
+        <a ng-href="#/edit/{{item.$id}}">Edit</a>
+        <a ng-href="#/delete/{{item.$id}}">Delete</a>
       </div>
     </td>
   </tr>
