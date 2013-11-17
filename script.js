@@ -79,7 +79,7 @@
         $scope.user = null;
       });
       $scope.login = function () {
-        authSvc.$login('facebook');
+        authSvc.$login('persona');
       };
       $scope.logout = function () {
         authSvc.$logout();

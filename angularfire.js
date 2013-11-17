@@ -323,7 +323,7 @@ AngularFire.prototype = {
     }
     if (cbs.length > 0) {
       for (var i = 0; i < cbs.length; i++) {
-        if (typeof cbs[i] == "function") {
+        if (typeof cbs[i] === "function") {
           cbs[i](param);
         }
       }
@@ -387,10 +387,10 @@ AngularFire.prototype = {
     function _findReplacePriority(item) {
       for (var prop in item) {
         if (item.hasOwnProperty(prop)) {
-          if (prop == "$priority") {
+          if (prop === "$priority") {
             item[".priority"] = item.$priority;
             delete item.$priority;
-          } else if (typeof item[prop] == "object") {
+          } else if (typeof item[prop] === "object") {
             _findReplacePriority(item[prop]);
           }
         }
