@@ -98,6 +98,7 @@
     })
 
     .controller('itemCtrl', function ($scope, $routeParams, itemSvc) {
+      $scope.id = $routeParams.id;
       $scope.item = itemSvc.$child($routeParams.id);
 /*
       itemSvc.$child($routeParams.id).then(function (value) {
