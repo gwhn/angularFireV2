@@ -3,11 +3,13 @@
 <table class="table">
   <tr>
     <th>Id</th>
+    <th>Priority</th>
     <th>Name</th>
     <th>Options</th>
   </tr>
   <tr ng-repeat="item in items | orderByPriority">
     <td><a ng-href="#/item/{{item.$id}}">{{item.$id}}</a></td>
+    <td>{{item.$priority}}</td>
     <td>{{item.name}}</td>
     <td>
       <div ng-show="user">
