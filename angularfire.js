@@ -69,7 +69,7 @@ AngularFire = function($q, $parse, $timeout, ref) {
   this._onChange = [];
   this._onLoaded = [];
 
-  if (typeof ref == "string") {
+  if (typeof ref === "string") {
     throw new Error("Please provide a Firebase reference instead " +
       "of a URL, eg: new Firebase(url)");
   }

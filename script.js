@@ -113,7 +113,7 @@
       $scope.isNew = true;
       $scope.save = function () {
         $scope.item.uid = $scope.user.id;
-        $scope.item.$priority = $scope.item.name;
+//        $scope.item.$priority = $scope.item.name;
         var ref = itemSvc.$add($scope.item);
         $location.path('/item/' + ref.name());
       };
