@@ -28,9 +28,9 @@
       that = this;
     }
 
-    function update(value) {
-      if (!angular.equals(value, $parse(bound.name)(bound.scope))) {
-        $parse(bound.name).assign(bound.scope, value);
+    function update() {
+      if (!angular.equals(that, $parse(bound.name)(bound.scope))) {
+        $parse(bound.name).assign(bound.scope, that);
       }
     }
 
@@ -76,7 +76,7 @@
           that[k] = v;
           broadcast(addedEvent, that);
           if (bound) {
-            update(that);
+            update();
           }
         });
       });
@@ -87,7 +87,7 @@
           that[k] = v;
           broadcast(movedEvent, that);
           if (bound) {
-            update(that);
+            update();
           }
         });
       });
@@ -98,7 +98,7 @@
           that[k] = v;
           broadcast(changedEvent, that);
           if (bound) {
-            update(that);
+            update();
           }
         });
       });
@@ -108,7 +108,7 @@
           delete that[k];
           broadcast(removedEvent, that);
           if (bound) {
-            update(that);
+            update();
           }
         });
       });
@@ -161,7 +161,7 @@
             d.resolve(that);
             broadcast(loadedEvent, that);
             if (bound) {
-              update(v);
+              update();
             }
           });
           switch (typeof v) {
