@@ -3,19 +3,12 @@
 
   function construct($q, $parse, $timeout, ref) {
 
-    var that,
-      bound,
-      index = [],
-      addedEvent = 'added',
-      onAdded = [],
-      movedEvent = 'moved',
-      onMoved = [],
-      changedEvent = 'changed',
-      onChanged = [],
-      removedEvent = 'removed',
-      onRemoved = [],
-      loadedEvent = 'loaded',
-      onLoaded = [];
+    var that, bound, index = [],
+      addedEvent = 'added', onAdded = [],
+      movedEvent = 'moved', onMoved = [],
+      changedEvent = 'changed', onChanged = [],
+      removedEvent = 'removed', onRemoved = [],
+      loadedEvent = 'loaded', onLoaded = [];
 
     if (!(ref instanceof window.Firebase)) {
       throw new Error('Provide a Firebase reference');
@@ -35,10 +28,7 @@
     }
 
     function broadcast(type, value) {
-      var cbs,
-        n,
-        i,
-        cb;
+      var cbs = [];
       switch (type) {
       case addedEvent:
         cbs = onAdded;
@@ -56,62 +46,60 @@
         cbs = onLoaded;
         break;
       default:
-        cbs = [];
-        break;
       }
-      n = cbs.length;
-      for (i = 0; i < n; i += 1) {
-        cb = cbs[i];
+      angular.forEach(cbs, function (cb) {
         if (typeof cb === 'function') {
           cb(value);
         }
-      }
+      });
     }
 
-    function attach() {
+    function attach(deferred) {
+      function resolve(event) {
+        deferred.resolve(that);
+        broadcast(event, that);
+      }
       ref.on('child_added', function (s) {
-        var k = s.name(),
-          v = s.val();
+        var k = s.name(), v = s.val();
         $timeout(function () {
           that[k] = v;
-          broadcast(addedEvent, that);
           if (bound) {
             update();
           }
-        });
+          return addedEvent;
+        }).then(resolve);
       });
       ref.on('child_moved', function (s) {
-        var k = s.name(),
-          v = s.val();
+        var k = s.name(), v = s.val();
         $timeout(function () {
           that[k] = v;
-          broadcast(movedEvent, that);
           if (bound) {
             update();
           }
-        });
+        }).then(resolve);
       });
       ref.on('child_changed', function (s) {
-        var k = s.name(),
-          v = s.val();
+        var k = s.name(), v = s.val();
         $timeout(function () {
           that[k] = v;
-          broadcast(changedEvent, that);
           if (bound) {
             update();
           }
-        });
+        }).then(resolve);
       });
       ref.on('child_removed', function (s) {
         var k = s.name();
         $timeout(function () {
           delete that[k];
-          broadcast(removedEvent, that);
           if (bound) {
             update();
           }
-        });
+        }).then(resolve);
       });
+    }
+
+    function updateIndex() {
+
     }
 
     function parse(object) {
@@ -121,7 +109,9 @@
     AngularFire.prototype = {
       $key: ref.name(),
 
-      $index: index,
+      $index: angular.copy(index),
+
+      $priority: null,
 
       $bind: function (scope, name) {
         var d = $q.defer(),
@@ -156,21 +146,25 @@
         var d = $q.defer();
         ref.on('value', function (s) {
           var v = s.val();
-          $timeout(function () {
-            angular.extend(that, v);
-            d.resolve(that);
-            broadcast(loadedEvent, that);
-            if (bound) {
-              update();
-            }
-          });
           switch (typeof v) {
           case 'string':
           case 'number':
           case 'boolean':
+            $timeout(function () {
+              angular.extend(that, v);
+              if (bound) {
+                update();
+              }
+            })
+              .then(function () {
+                d.resolve(that);
+              })
+              .then(function () {
+                broadcast(loadedEvent, that);
+              });
             break;
           case 'object':
-            attach();
+            attach(d);
             ref.off('value');
             break;
           default:
@@ -181,8 +175,7 @@
       },
 
       $add: function (value) {
-        var d = $q.defer(),
-          r,
+        var d = $q.defer(), r,
           cb = function (err) {
             if (err) {
               d.reject(err);
