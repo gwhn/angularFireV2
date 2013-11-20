@@ -3,24 +3,30 @@
 
   angular.module('angularFireV2', ['ngRoute', 'firebase'])
 
-    .constant('fbUrl', 'https://afv2.firebaseio.com/')
+    .constant('fbUrl', 'https://afv2p.firebaseio.com/')
 
-    .factory('Firebase', function ($window) {
-      return $window.Firebase;
-    })
-
-    .factory('itemSvc', function ($firebase, fbUrl, Firebase) {
+    .factory('items', function ($firebase, fbUrl, Firebase) {
       return $firebase(new Firebase(fbUrl + 'items'));
     })
 
-    .factory('authSvc', function ($log, $firebaseAuth, fbUrl, Firebase) {
-      return $firebaseAuth(new Firebase(fbUrl), {
-        simple: true,
-        callback: function () {
-          $log.log('$firebaseAuth:init', arguments);
-        }
-      });
+    .factory('things', function () {
+      return [
+        {select: 1, label: 'thingy 1'},
+        {select: 2, label: 'thingy 2'},
+        {select: 3, label: 'thingy 3'}
+      ];
     })
+
+    /*
+     .factory('auth', function ($log, $firebaseAuth, fbUrl, Firebase) {
+     return $firebaseAuth(new Firebase(fbUrl), {
+     simple: true,
+     callback: function () {
+     $log.log('$firebaseAuth:init', arguments);
+     }
+     });
+     })
+     */
 
     .config(function ($routeProvider) {
       $routeProvider
@@ -49,117 +55,121 @@
         });
     })
 
-    .controller('appCtrl', function ($scope, $log, itemSvc, authSvc) {
-      itemSvc.$on('change', function (data) {
-        $log.log('change', data); // data is always undefined!
+    .controller('appCtrl', function ($scope, $log, items) {
+      items.$on('added', function (data) {
+        $log.log('added', data);
       });
-      itemSvc.$on('loaded', function (data) {
+      items.$on('moved', function (data) {
+        $log.log('moved', data);
+      });
+      items.$on('changed', function (data) {
+        $log.log('changed', data);
+      });
+      items.$on('removed', function (data) {
+        $log.log('removed', data);
+      });
+      items.$on('loaded', function (data) {
         $log.log('loaded', data);
       });
       var unbind;
-      itemSvc.$bind($scope, 'data').then(function (fn) {
+      items.$bind($scope, 'data').then(function (fn) {
         $log.log('$bind $scope.data resolved');
         unbind = fn;
       }, function (err) {
         $log.log('$bind $scope.data rejected');
       });
-      $scope.$watchCollection(itemSvc.$getIndex, function (index) {
-        $scope.index = index;
+    })
+    /*
+     .controller('appCtrl', function ($scope, $log, items, auth) {
+     items.$on('change', function (data) {
+     $log.log('change', data); // data is always undefined!
+     });
+     items.$on('loaded', function (data) {
+     $log.log('loaded', data);
+     });
+     var unbind;
+     items.$bind($scope, 'data').then(function (fn) {
+     $log.log('$bind $scope.data resolved');
+     unbind = fn;
+     }, function (err) {
+     $log.log('$bind $scope.data rejected');
+     });
+     $scope.$watchCollection(items.$getIndex, function (index) {
+     $scope.index = index;
+     });
+     $scope.$on('$firebaseAuth:login', function (event, user) {
+     $log.log('$firebaseAuth:login', arguments);
+     $scope.user = user;
+     });
+     $scope.$on('$firebaseAuth:logout', function (event) {
+     $log.log('$firebaseAuth:logout', arguments);
+     $scope.user = null;
+     });
+     $scope.$on('$firebaseAuth:error', function (event, err) {
+     $log.log('$firebaseAuth:error', arguments);
+     $scope.user = null;
+     });
+     $scope.login = function () {
+     auth.$login('persona');
+     };
+     $scope.logout = function () {
+     auth.$logout();
+     };
+     })
+     */
+
+    .controller('listCtrl', function ($scope, items) {
+      items.$value().then(function (items) {
+        $scope.items = items;
       });
-      $scope.$on('$firebaseAuth:login', function (event, user) {
-        $log.log('$firebaseAuth:login', arguments);
-        $scope.user = user;
-      });
-      $scope.$on('$firebaseAuth:logout', function (event) {
-        $log.log('$firebaseAuth:logout', arguments);
-        $scope.user = null;
-      });
-      $scope.$on('$firebaseAuth:error', function (event, err) {
-        $log.log('$firebaseAuth:error', arguments);
-        $scope.user = null;
-      });
-      $scope.login = function () {
-        authSvc.$login('persona');
-      };
-      $scope.logout = function () {
-        authSvc.$logout();
-      };
     })
 
-    .controller('listCtrl', function ($scope, itemSvc) {
-      $scope.items = itemSvc;
-/*
-      itemSvc.$value().then(function (value) {
-        $scope.items = value;
-      }, function (err) {
-        console.log(err.msg);
-      });
-*/
-    })
-
-    .controller('itemCtrl', function ($scope, $routeParams, itemSvc) {
+    .controller('itemCtrl', function ($scope, $routeParams, items) {
       $scope.id = $routeParams.id;
-      $scope.item = itemSvc.$child($routeParams.id);
-/*
-      itemSvc.$child($routeParams.id).then(function (value) {
-        $scope.item = value;
-      }, function (err) {
-        console.log(err.msg);
+      items.$child($routeParams.id).then(function (item) {
+        $scope.item = item;
       });
-*/
     })
 
-    .controller('newCtrl', function ($scope, $location, itemSvc) {
+    .controller('newCtrl', function ($scope, $location, items, things) {
       $scope.isNew = true;
+      $scope.things = things;
       $scope.save = function () {
-        $scope.item.uid = $scope.user.id;
-        $scope.item.$priority = $scope.item.name;
-        var ref = itemSvc.$add($scope.item);
-        $location.path('/item/' + ref.name());
-      };
-/*
-      $scope.save = function () {
-        itemSvc.$add($scope.item).then(function (value) {
-          $location.path('/item/' + value.$id);
-        }, function (err) {
-          console.log(err.msg);
+//        $scope.item.uid = $scope.user.id;
+//        $scope.item.$priority = $scope.item.name;
+        items.$add($scope.item).then(function (value) {
+          $location.path('/item/' + value.$key);
         });
       };
-*/
     })
 
-    .controller('editCtrl', function ($scope, $location, $routeParams, itemSvc) {
-      $scope.item = itemSvc.$child($routeParams.id);
-      $scope.update = function () {
-        $scope.item.$save();
-        $location.path('/item/' + $routeParams.id);
+    .controller('editCtrl', function ($scope, $location, $routeParams, items, things) {
+      $scope.things = things;
+      items.$child($routeParams.id).then(function (item) {
+        $scope.item = item;
+      });
+      $scope.save = function (key) {
+        $scope.item.$save(key);
       };
-/*
+      $scope.remove = function (key) {
+        $scope.item.$remove(key);
+      };
       $scope.update = function () {
-        itemSvc.$save($scope.item).then(function (value) {
-          $location.path('/item/' + value.$id);
-        }, function (err) {
-          console.log(err.msg);
+        $scope.item.$save().then(function () {
+          $location.path('/item/' + $routeParams.id);
         });
       };
-*/
     })
 
-    .controller('deleteCtrl', function ($scope, $location, $routeParams, itemSvc) {
-      $scope.item = itemSvc.$child($routeParams.id);
+    .controller('deleteCtrl', function ($scope, $location, $routeParams, items) {
+      items.$child($routeParams.id).then(function (item) {
+        $scope.item = item;
+      });
       $scope.remove = function () {
-        $scope.item.$remove();
-        $location.path('/list');
-      };
-/*
-      $scope.remove = function () {
-        itemSvc.$remove($scope.item).then(function () {
+        $scope.item.$remove().then(function (value) {
           $location.path('/list');
-        }, function (err) {
-          console.log(err);
         });
       };
-*/
     });
 
 }(window.angular));

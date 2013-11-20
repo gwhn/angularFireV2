@@ -18,13 +18,13 @@ angular.module("firebase", []).value("Firebase", Firebase);
 
 // Define the `$firebase` service that provides synchronization methods.
 angular.module("firebase").factory("$firebase", ["$q", "$parse", "$timeout",
-  function($q, $parse, $timeout) {
+  function ($q, $parse, $timeout) {
     // The factory returns an object containing the value of the data at
     // the Firebase location provided, as well as several methods. It
     // takes a single argument:
     //
     //   * `ref`: A Firebase reference. Queries or limits may be applied.
-    return function(ref) {
+    return function (ref) {
       var af = new AngularFire($q, $parse, $timeout, ref);
       return af.construct();
     };
@@ -34,8 +34,8 @@ angular.module("firebase").factory("$firebase", ["$q", "$parse", "$timeout",
 // Define the `orderByPriority` filter that sorts objects returned by
 // $firebase in the order of priority. Priority is defined by Firebase,
 // for more info see: https://www.firebase.com/docs/ordered-data.html
-angular.module("firebase").filter("orderByPriority", function() {
-  return function(input) {
+angular.module("firebase").filter("orderByPriority", function () {
+  return function (input) {
     if (!input.$getIndex || typeof input.$getIndex != "function") {
       return input;
     }
@@ -59,7 +59,7 @@ angular.module("firebase").filter("orderByPriority", function() {
 });
 
 // The `AngularFire` object that implements synchronization.
-AngularFire = function($q, $parse, $timeout, ref) {
+AngularFire = function ($q, $parse, $timeout, ref) {
   this._q = $q;
   this._bound = false;
   this._parse = $parse;
@@ -79,7 +79,7 @@ AngularFire = function($q, $parse, $timeout, ref) {
 AngularFire.prototype = {
   // This function is called by the factory to create a new explicit sync
   // point between a particular model and a Firebase location.
-  construct: function() {
+  construct: function () {
     var self = this;
     var object = {};
 
@@ -93,20 +93,28 @@ AngularFire.prototype = {
     // This function also returns a promise, which when resolve will be
     // provided an `unbind` method, a function which you can call to stop
     // watching the local model for changes.
-    object.$bind = function(scope, name) {
+    object.$bind = function (scope, name) {
       return self._bind(scope, name);
     };
 
     // Add an object to the remote data. Adding an object is the
     // equivalent of calling `push()` on a Firebase reference.
-    object.$add = function(item) {
-      var newRef;
+    object.$add = function (item) {
+      var def = self._q.defer(),
+        ref,
+        cb = function (err) {
+          if (err) {
+            def.reject(err);
+          } else {
+            def.resolve(ref);
+          }
+        };
       if (typeof item === "object") {
-        newRef = self._fRef.ref().push(self._parseObject(item));
+        ref = self._fRef.ref().push(self._parseObject(item), cb);
       } else {
-        newRef = self._fRef.ref().push(item);
+        ref = self._fRef.ref().push(item, cb);
       }
-      return newRef;
+      return def.promise;
     };
 
     // Save the current state of the object (or a child) to the remote.
@@ -114,18 +122,36 @@ AngularFire.prototype = {
     //
     //    * `key`: Specify a child key to save the data for. If no key is
     //             specified, the entire object's current state will be saved.
-    object.$save = function(key) {
+    object.$save = function (key) {
+      var def = self._q.defer(),
+        cb = function (err) {
+          if (err) {
+            def.reject(err);
+          } else {
+            def.resolve();
+          }
+        };
       if (key) {
-        self._fRef.ref().child(key).set(self._parseObject(self._object[key]));
+        self._fRef.ref().child(key).set(self._parseObject(self._object[key]), cb);
       } else {
-        self._fRef.ref().set(self._parseObject(self._object));
+        self._fRef.ref().set(self._parseObject(self._object), cb);
       }
+      return def.promise;
     };
 
     // Set the current state of the object to the specified value. Calling
     // this is the equivalent of calling `set()` on a Firebase reference.
-    object.$set = function(newValue) {
-      self._fRef.ref().set(newValue);
+    object.$set = function (newValue) {
+      var def = self._q.defer(),
+        cb = function (err) {
+          if (err) {
+            def.reject(err);
+          } else {
+            def.resolve();
+          }
+        };
+      self._fRef.ref().set(newValue, cb);
+      return def.promise;
     };
 
     // Remove this object from the remote data. Calling this is the equivalent
@@ -134,20 +160,31 @@ AngularFire.prototype = {
     //
     //    * `key`: Specify a child key to remove. If no key is specified, the
     //             entire object will be removed from the remote data store.
-    object.$remove = function(key) {
+    object.$remove = function (key) {
+      var def = self._q.defer(),
+        cb = function (err) {
+          if (err) {
+            def.reject(err);
+          } else {
+            def.resolve();
+          }
+        };
       if (key) {
-        self._fRef.ref().child(key).remove();
+        self._fRef.ref().child(key).remove(cb);
       } else {
-        self._fRef.ref().remove();
+        self._fRef.ref().remove(cb);
       }
+      return def.promise;
     };
 
     // Get an AngularFire wrapper for a named child.
-    object.$child = function(key) {
-      var af = new AngularFire(
-        self._q, self._parse, self._timeout, self._fRef.ref().child(key)
-      );
-      return af.construct();
+    object.$child = function (key) {
+      var def = self._q.defer(),
+        af = new AngularFire(
+          self._q, self._parse, self._timeout, self._fRef.ref().child(key)
+        );
+      def.resolve(af.construct());
+      return def.promise;
     };
 
     // Attach an event handler for when the object is changed. You can attach
@@ -158,7 +195,7 @@ AngularFire.prototype = {
     //  - "loaded": This function will be called *once*, when the initial
     //              data has been loaded. 'object' will be an empty object ({})
     //              until this function is called.
-    object.$on = function(type, callback) {
+    object.$on = function (type, callback) {
       switch (type) {
         case "change":
           self._onChange.push(callback);
@@ -173,12 +210,23 @@ AngularFire.prototype = {
 
     // Return the current index, which is a list of key names in an array,
     // ordered by their Firebase priority.
-    object.$getIndex = function() {
+    object.$getIndex = function () {
       return angular.copy(self._index);
+/*
+      var def = self._q.defer();
+      def.resolve(angular.copy(self._index));
+      return def.promise;
+*/
+    };
+
+    object.$value = function () {
+      var def = self._q.defer();
+      self._getInitialValue();
+      def.resolve(self._object);
+      return def.promise;
     };
 
     self._object = object;
-    self._getInitialValue();
 
     return self._object;
   },
@@ -187,9 +235,9 @@ AngularFire.prototype = {
   // given reference. If the data returned from the server is an object or
   // array, we'll attach appropriate child event handlers. If the value is
   // a primitive, we'll continue to watch for value changes.
-  _getInitialValue: function() {
+  _getInitialValue: function () {
     var self = this;
-    self._fRef.on("value", function(snapshot) {
+    self._fRef.on("value", function (snapshot) {
       var value = snapshot.val();
 
       switch (typeof value) {
@@ -214,7 +262,7 @@ AngularFire.prototype = {
   },
 
   // This function attaches child events for object and array types.
-  _getChildValues: function() {
+  _getChildValues: function () {
     var self = this;
     // Store the priority of the current property as "$priority". Changing
     // the value of this property will also update the priority of the
@@ -247,7 +295,7 @@ AngularFire.prototype = {
     self._fRef.on("child_added", _processSnapshot);
     self._fRef.on("child_moved", _processSnapshot);
     self._fRef.on("child_changed", _processSnapshot);
-    self._fRef.on("child_removed", function(snapshot) {
+    self._fRef.on("child_removed", function (snapshot) {
       // Remove from index.
       var key = snapshot.name();
       var idx = self._index.indexOf(key);
@@ -260,10 +308,10 @@ AngularFire.prototype = {
 
   // Called whenever there is a remote change. Applies them to the local
   // model for both explicit and implicit sync modes.
-  _updateModel: function(key, value) {
+  _updateModel: function (key, value) {
     var self = this;
-    self._timeout(function() {
-      if (value == null) {
+    self._timeout(function () {
+      if (value === null) {
         delete self._object[key];
       } else {
         self._object[key] = value;
@@ -288,9 +336,9 @@ AngularFire.prototype = {
   },
 
   // Called whenever there is a remote change for a primitive value.
-  _updatePrimitive: function(value) {
+  _updatePrimitive: function (value) {
     var self = this;
-    self._timeout(function() {
+    self._timeout(function () {
       // Primitive values are represented as a special object {$value: value}.
       self._object.$value = value;
 
@@ -308,7 +356,7 @@ AngularFire.prototype = {
   },
 
   // If event handlers for a specified event were attached, call them.
-  _broadcastEvent: function(evt, param) {
+  _broadcastEvent: function (evt, param) {
     var cbs;
     switch (evt) {
       case "change":
@@ -333,7 +381,7 @@ AngularFire.prototype = {
   // This function creates a 3-way binding between the provided scope model
   // and Firebase. All changes made to the local model are saved to Firebase
   // and changes to the remote data automatically appear on the local model.
-  _bind: function(scope, name) {
+  _bind: function (scope, name) {
     var self = this;
     var deferred = self._q.defer();
 
@@ -353,7 +401,7 @@ AngularFire.prototype = {
 
     // We're responsible for setting up scope.$watch to reflect local changes
     // on the Firebase data.
-    var unbind = scope.$watch(name, function() {
+    var unbind = scope.$watch(name, function () {
       // If the new local value matches the current remote value, we don't
       // trigger a remote update.
       local = self._parseObject(self._parse(name)(scope));
@@ -369,12 +417,12 @@ AngularFire.prototype = {
     }, true);
 
     // When the scope is destroyed, unbind automatically.
-    scope.$on("$destroy", function() {
+    scope.$on("$destroy", function () {
       unbind();
     });
 
     // Once we receive the initial value, resolve the promise.
-    self._fRef.once("value", function() {
+    self._fRef.once("value", function () {
       deferred.resolve(unbind);
     });
 
@@ -383,7 +431,7 @@ AngularFire.prototype = {
 
   // Parse a local model, removing all properties beginning with "$" and
   // converting $priority to ".priority".
-  _parseObject: function(obj) {
+  _parseObject: function (obj) {
     function _findReplacePriority(item) {
       for (var prop in item) {
         if (item.hasOwnProperty(prop)) {
@@ -410,7 +458,7 @@ AngularFire.prototype = {
 // for AngularFire.
 angular.module("firebase").factory("$firebaseAuth", [
   "$timeout", "$injector", "$rootScope", "$location",
-  function($t, $i, $rs, $l) {
+  function ($t, $i, $rs, $l) {
     // The factory returns an object containing the authentication state
     // of the current user. This service takes 2 arguments:
     //
@@ -437,14 +485,14 @@ angular.module("firebase").factory("$firebaseAuth", [
     //
     // The returned object will also have the following methods available:
     // $login(), $logout() and $createUser().
-    return function(ref, options) {
+    return function (ref, options) {
       var auth = new AngularFireAuth($t, $i, $rs, $l, ref, options);
       return auth.construct();
     };
   }
 ]);
 
-AngularFireAuth = function($t, $i, $rs, $l, ref, options) {
+AngularFireAuth = function ($t, $i, $rs, $l, ref, options) {
   this._timeout = $t;
   this._injector = $i;
   this._location = $l;
@@ -457,7 +505,8 @@ AngularFireAuth = function($t, $i, $rs, $l, ref, options) {
   }
 
   // Setup options and callback.
-  this._cb = function(){};
+  this._cb = function () {
+  };
   this._options = options || {};
   if (this._options.callback && typeof this._options.callback === "function") {
     this._cb = options.callback;
@@ -474,7 +523,7 @@ AngularFireAuth = function($t, $i, $rs, $l, ref, options) {
 };
 
 AngularFireAuth.prototype = {
-  construct: function() {
+  construct: function () {
     var self = this;
     var object = {
       user: null,
@@ -490,7 +539,7 @@ AngularFireAuth.prototype = {
       }
       // Set up a handler for all future route changes, so we can check
       // if authentication is required.
-      self._rootScope.$on("$routeChangeStart", function(e, next) {
+      self._rootScope.$on("$routeChangeStart", function (e, next) {
         self._authRequiredRedirect(next, self._options.path);
       });
     }
@@ -509,7 +558,7 @@ AngularFireAuth.prototype = {
       return;
     }
 
-    var client = new FirebaseSimpleLogin(self._fRef, function(err, user) {
+    var client = new FirebaseSimpleLogin(self._fRef, function (err, user) {
       self._cb(err, user);
       if (err) {
         self._rootScope.$broadcast("$firebaseAuth:error", err);
@@ -527,7 +576,7 @@ AngularFireAuth.prototype = {
   // The login method takes a provider (for Simple Login) or a token
   // (for Custom Login) and authenticates the Firebase URL with which
   // the service was initialized.
-  login: function(tokenOrProvider, options) {
+  login: function (tokenOrProvider, options) {
     var self = this;
     switch (tokenOrProvider) {
       case "github":
@@ -547,21 +596,21 @@ AngularFireAuth.prototype = {
         try {
           // Extract claims and update user auth state to include them.
           var claims = self._deconstructJWT(tokenOrProvider);
-          self._fRef.auth(tokenOrProvider, function(err) {
+          self._fRef.auth(tokenOrProvider, function (err) {
             if (err) {
               self._rootScope.$broadcast("$firebaseAuth:error", err);
             } else {
               self._loggedIn(claims);
             }
           });
-        } catch(e) {
+        } catch (e) {
           self._rootScope.$broadcast("$firebaseAuth:error", e);
         }
     }
   },
 
   // Unauthenticate the Firebase reference.
-  logout: function() {
+  logout: function () {
     if (this._authClient) {
       this._authClient.logout();
     } else {
@@ -573,9 +622,9 @@ AngularFireAuth.prototype = {
   // Function 'cb' receives an error as the first argument and a
   // Simple Login user object as the second argument. Pass noLogin=true
   // if you don't want the newly created user to also be logged in.
-  createUser: function(email, password, cb, noLogin) {
+  createUser: function (email, password, cb, noLogin) {
     var self = this;
-    self._authClient.createUser(email, password, function(err, user) {
+    self._authClient.createUser(email, password, function (err, user) {
       try {
         if (err) {
           self._rootScope.$broadcast("$firebaseAuth:error", err);
@@ -584,11 +633,11 @@ AngularFireAuth.prototype = {
             self.login("password", {email: email, password: password});
           }
         }
-      } catch(e) {
+      } catch (e) {
         self._rootScope.$broadcast("$firebaseAuth:error", e);
       }
       if (cb) {
-        self._timeout(function(){
+        self._timeout(function () {
           cb(err, user);
         });
       }
@@ -596,9 +645,9 @@ AngularFireAuth.prototype = {
   },
 
   // Common function to trigger a login event on the root scope.
-  _loggedIn: function(user) {
+  _loggedIn: function (user) {
     var self = this;
-    self._timeout(function() {
+    self._timeout(function () {
       self._object.user = user;
       self._rootScope.$broadcast("$firebaseAuth:login", user);
       if (self._redirectTo) {
@@ -610,9 +659,9 @@ AngularFireAuth.prototype = {
   },
 
   // Common function to trigger a logout event on the root scope.
-  _loggedOut: function() {
+  _loggedOut: function () {
     var self = this;
-    self._timeout(function() {
+    self._timeout(function () {
       self._object.user = null;
       self._authenticated = false;
       self._rootScope.$broadcast("$firebaseAuth:logout");
@@ -621,8 +670,8 @@ AngularFireAuth.prototype = {
 
   // A function to check whether the current path requires authentication,
   // and if so, whether a redirect to a login page is needed.
-  _authRequiredRedirect: function(route, path) {
-    if (route.authRequired && !this._authenticated){
+  _authRequiredRedirect: function (route, path) {
+    if (route.authRequired && !this._authenticated) {
       if (route.pathTo === undefined) {
         this._redirectTo = this._location.path();
       } else {
@@ -635,7 +684,7 @@ AngularFireAuth.prototype = {
 
   // Helper function to decode Base64 (polyfill for window.btoa on IE).
   // From: https://github.com/mshang/base64-js/blob/master/base64.js
-  _decodeBase64: function(str) {
+  _decodeBase64: function (str) {
     var char_set =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     var output = ""; // final output
@@ -666,7 +715,7 @@ AngularFireAuth.prototype = {
 
   // Helper function to extract claims from a JWT. Does *not* verify the
   // validity of the token.
-  _deconstructJWT: function(token) {
+  _deconstructJWT: function (token) {
     var segments = token.split(".");
     if (!segments instanceof Array || segments.length !== 3) {
       throw new Error("Invalid JWT");

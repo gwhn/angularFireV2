@@ -1,6 +1,38 @@
-<label>Name
-  <input type="text" ng-model="item.name"/>
-</label>
+<div class="form-group">
+  <label>String
+    <input type="text" ng-model="item.string" class="form-control"/>
+    <button ng-hide="isNew" ng-click="save('string')" class="btn btn-default">Save String</button>
+    <button ng-hide="isNew" ng-click="remove('string')" class="btn btn-default">Remove String</button>
+  </label>
+</div>
+<div class="form-group">
+  <label>Number
+    <input type="number" ng-model="item.number" class="form-control"/>
+    <button ng-hide="isNew" ng-click="save('number')" class="btn btn-default">Save Number</button>
+    <button ng-hide="isNew" ng-click="remove('number')" class="btn btn-default">Remove Number</button>
+  </label>
+</div>
+<div class="checkbox">
+  <label>Boolean
+    <input type="checkbox" ng-model="item.boolean"/>
+    <button ng-hide="isNew" ng-click="save('boolean')" class="btn btn-default">Save Boolean</button>
+    <button ng-hide="isNew" ng-click="remove('boolean')" class="btn btn-default">Remove Boolean</button>
+  </label>
+</div>
+<div class="form-group">
+  <label>Array
+    <select ng-model="item.array" ng-options="t.select as t.label for t in things" multiple class="form-control"></select>
+    <button ng-hide="isNew" ng-click="save('array')" class="btn btn-default">Save Array</button>
+    <button ng-hide="isNew" ng-click="remove('array')" class="btn btn-default">Remove Array</button>
+  </label>
+</div>
+<div class="form-group">
+  <label>Object
+    <input type="text" ng-model="item.object.something" class="form-control"/>
+    <button ng-hide="isNew" ng-click="save('object')" class="btn btn-default">Save Object</button>
+    <button ng-hide="isNew" ng-click="remove('object')" class="btn btn-default">Remove Object</button>
+  </label>
+</div>
 
 <button ng-show="isNew" ng-click="save()" class="btn btn-primary">Save</button>
 <button ng-hide="isNew" ng-click="update()" class="btn btn-primary">Update</button>

@@ -1,6 +1,15 @@
-<h3>{{item.name}}</h3>
+<p><strong>String:</strong>{{item.string}}</p>
+<p><strong>Number:</strong>{{item.number}}</p>
+<p><strong>Boolean:</strong>{{item.boolean}}</p>
+<p><strong>Array:</strong>
+  <ul>
+    <li ng-repeat="thing in item.array">{{thing}}</li>
+  </ul>
+</p>
+<p><strong>Object:</strong>{{item.object.something}}</p>
 
-<div ng-show="user">
+<!--<div ng-show="user">-->
+<div>
   <a ng-href="#/edit/{{id}}" class="btn btn-link">Edit</a>
   <a ng-href="#/delete/{{id}}" class="btn btn-link">Delete</a>
 </div>
