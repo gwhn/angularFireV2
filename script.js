@@ -76,7 +76,10 @@
         $log.log('$bind $scope.data resolved');
         unbind = fn;
       }, function (err) {
-        $log.log('$bind $scope.data rejected');
+        $log.log('$bind $scope.data rejected ' + err);
+      });
+      $scope.$watchCollection(items.$index, function (index) {
+        $scope.index = index;
       });
     })
     /*

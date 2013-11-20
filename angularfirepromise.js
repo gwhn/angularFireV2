@@ -27,7 +27,7 @@
       }
     }
 
-    function broadcast(type, value) {
+    function emit(type, value) {
       var cbs = [];
       switch (type) {
       case addedEvent:
@@ -54,55 +54,52 @@
       });
     }
 
-    function attach(deferred) {
-      function resolve(event) {
-        deferred.resolve(that);
-        broadcast(event, that);
+    function attach() {
+      function add(snapshot, previousChild, event) {
+        var k = snapshot.name(),
+          v = snapshot.val(),
+          p = snapshot.getPriority(),
+          i = index.indexOf(k);
+        if (i !== -1) {
+          index.splice(i, 1);
+        }
+        if (previousChild) {
+          index.splice(index.indexOf(previousChild) + 1, 0, k);
+        } else {
+          index.unshift(k);
+        }
+        $timeout(function () {
+          v.$priority = p;
+          that[k] = v;
+          if (bound) {
+            update();
+          }
+          emit(event, that);
+        });
       }
-      ref.on('child_added', function (s, pc) {
-        var k = s.name(), v = s.val();
-        $timeout(function () {
-          that[k] = v;
-          if (bound) {
-            update();
-          }
-          return addedEvent;
-        }).then(resolve);
-      });
-      ref.on('child_moved', function (s, pc) {
-        var k = s.name(), v = s.val();
-        $timeout(function () {
-          that[k] = v;
-          if (bound) {
-            update();
-          }
-          return movedEvent;
-        }).then(resolve);
-      });
-      ref.on('child_changed', function (s, pc) {
-        var k = s.name(), v = s.val();
-        $timeout(function () {
-          that[k] = v;
-          if (bound) {
-            update();
-          }
-          return changedEvent;
-        }).then(resolve);
-      });
-      ref.on('child_removed', function (s) {
-        var k = s.name();
+      function remove(snapshot, event) {
+        var k = snapshot.name();
+        index.splice(index.indexOf(k), 1);
         $timeout(function () {
           delete that[k];
           if (bound) {
             update();
           }
-          return removedEvent;
-        }).then(resolve);
+          emit(event, that);
+        });
+      }
+      ref.on('child_added', function (s, pc) {
+        add(s, pc, addedEvent);
       });
-    }
-
-    function updateIndex() {
-
+      ref.on('child_moved', function (s, pc) {
+        add(s, pc, movedEvent);
+      });
+      ref.on('child_changed', function (s, pc) {
+        add(s, pc, changedEvent);
+      });
+      ref.on('child_removed', function (s) {
+        remove(s, removedEvent);
+      });
     }
 
     function parse(object) {
@@ -112,9 +109,9 @@
     AngularFire.prototype = {
       $key: ref.name(),
 
-      $index: angular.copy(index),
-
-      $priority: null,
+      $index: function () {
+        return angular.copy(index);
+      },
 
       $bind: function (scope, name) {
         var d = $q.defer(),
@@ -148,25 +145,27 @@
       $value: function () {
         var d = $q.defer();
         ref.on('value', function (s) {
-          var v = s.val();
+          var v = s.val(),
+            p = s.getPriority();
+          $timeout(function () {
+            v.$priority = p;
+            angular.extend(that, v);
+            if (bound) {
+              update();
+            }
+            return loadedEvent;
+          })
+            .then(function (event) {
+              d.resolve(that);
+              emit(event, that);
+            });
           switch (typeof v) {
           case 'string':
           case 'number':
           case 'boolean':
-            $timeout(function () {
-              angular.extend(that, v);
-              if (bound) {
-                update();
-              }
-              return loadedEvent;
-            })
-              .then(function (event) {
-                d.resolve(that);
-                broadcast(event, that);
-              });
             break;
           case 'object':
-            attach(d);
+            attach();
             ref.off('value');
             break;
           default:
