@@ -11,7 +11,7 @@
       loadedEvent = 'loaded', onLoaded = [];
 
     if (!(ref instanceof window.Firebase)) {
-      throw new Error('Provide a Firebase reference');
+      throw 'Provide a Firebase reference';
     }
 
     function AngularFire() {
@@ -59,7 +59,7 @@
         deferred.resolve(that);
         broadcast(event, that);
       }
-      ref.on('child_added', function (s) {
+      ref.on('child_added', function (s, pc) {
         var k = s.name(), v = s.val();
         $timeout(function () {
           that[k] = v;
@@ -69,22 +69,24 @@
           return addedEvent;
         }).then(resolve);
       });
-      ref.on('child_moved', function (s) {
+      ref.on('child_moved', function (s, pc) {
         var k = s.name(), v = s.val();
         $timeout(function () {
           that[k] = v;
           if (bound) {
             update();
           }
+          return movedEvent;
         }).then(resolve);
       });
-      ref.on('child_changed', function (s) {
+      ref.on('child_changed', function (s, pc) {
         var k = s.name(), v = s.val();
         $timeout(function () {
           that[k] = v;
           if (bound) {
             update();
           }
+          return changedEvent;
         }).then(resolve);
       });
       ref.on('child_removed', function (s) {
@@ -94,6 +96,7 @@
           if (bound) {
             update();
           }
+          return removedEvent;
         }).then(resolve);
       });
     }
@@ -155,12 +158,11 @@
               if (bound) {
                 update();
               }
+              return loadedEvent;
             })
-              .then(function () {
+              .then(function (event) {
                 d.resolve(that);
-              })
-              .then(function () {
-                broadcast(loadedEvent, that);
+                broadcast(event, that);
               });
             break;
           case 'object':
@@ -168,7 +170,7 @@
             ref.off('value');
             break;
           default:
-            throw new Error('Unexpected type from remote data ' + typeof v);
+            throw 'Unexpected type from remote data ' + typeof v;
           }
         });
         return d.promise;
@@ -256,7 +258,7 @@
           onLoaded.push(callback);
           break;
         default:
-          throw new Error('Invalid event type ' + type + ' specified');
+          throw 'Invalid event type ' + type + ' specified';
         }
         return this;
       }
