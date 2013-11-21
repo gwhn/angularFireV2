@@ -185,11 +185,16 @@
             }
           };
         r = ref.push(parse(value), cb);
+        if (value.$priority) {
+          r.setPriority(value.$priority);
+        }
         return d.promise;
       },
 
       $save: function (key) {
         var d = $q.defer(),
+          r = key ? ref.child(key) : ref,
+          o = key ? that[key] : that,
           cb = function (err) {
             if (err) {
               d.reject(err);
@@ -197,10 +202,10 @@
               d.resolve(that);
             }
           };
-        if (key) {
-          ref.child(key).set(parse(that[key]), cb);
+        if (o.$priority) {
+          r.setWithPriority(parse(o), o.$priority, cb);
         } else {
-          ref.set(parse(that), cb);
+          r.set(parse(o), cb);
         }
         return d.promise;
       },
@@ -214,7 +219,11 @@
               d.resolve(that);
             }
           };
-        ref.set(parse(value), cb);
+        if (value.$priority) {
+          ref.setWithPriority(parse(value), value.$priority, cb);
+        } else {
+          ref.set(parse(value), cb);
+        }
         return d.promise;
       },
 

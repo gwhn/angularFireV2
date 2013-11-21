@@ -139,7 +139,7 @@
       $scope.things = things;
       $scope.save = function () {
 //        $scope.item.uid = $scope.user.id;
-//        $scope.item.$priority = $scope.item.name;
+        $scope.item.$priority = $scope.item.string;
         items.$add($scope.item).then(function (value) {
           $location.path('/item/' + value.$key);
         });
@@ -158,6 +158,7 @@
         $scope.item.$remove(key);
       };
       $scope.update = function () {
+        $scope.item.$priority = $scope.item.string;
         $scope.item.$save().then(function () {
           $location.path('/item/' + $routeParams.id);
         });
