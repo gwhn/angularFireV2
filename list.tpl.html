@@ -11,17 +11,17 @@
     <th>Options</th>
   </tr>
   <!--<tr ng-repeat="item in items | orderByPriority | filter:search.query">-->
-  <tr ng-repeat="(key, value) in items">
-    <td><a ng-href="#/item/{{key}}">{{key}}</a></td>
-    <td>{{value.$priority}}</td>
-    <td>{{value.string}}</td>
-    <td>{{value.number}}</td>
-    <td>{{value.boolean}}</td>
+  <tr ng-repeat="item in items | orderByPriority">
+    <td><a ng-href="#/item/{{item.$id}}">{{item.$id}}</a></td>
+    <td>{{item.$priority}}</td>
+    <td>{{item.string}}</td>
+    <td>{{item.number}}</td>
+    <td>{{item.boolean}}</td>
     <td>
       <!--<div ng-show="user">-->
       <div>
-        <a ng-href="#/edit/{{key}}" class="btn btn-link">Edit</a>
-        <a ng-href="#/delete/{{key}}" class="btn btn-link">Delete</a>
+        <a ng-href="#/edit/{{item.$id}}" class="btn btn-link">Edit</a>
+        <a ng-href="#/delete/{{item.$id}}" class="btn btn-link">Delete</a>
       </div>
     </td>
   </tr>

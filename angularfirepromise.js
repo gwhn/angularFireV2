@@ -296,6 +296,23 @@
     ])
 
     .filter('orderByPriority', function () {
-
+      return function (input) {
+        var a = [], i, j, n, k, v;
+        if (!input.$index || typeof input.$index !== 'function') {
+          return input;
+        }
+        i = input.$index();
+        n = i.length;
+        if (n === 0) {
+          return input;
+        }
+        for (j = 0; j < n; j += 1) {
+          k = i[j];
+          v = input[k];
+          v.$id = k;
+          a.push(v);
+        }
+        return a;
+      };
     });
 }(window.angular));
