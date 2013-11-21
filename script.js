@@ -56,17 +56,8 @@
     })
 
     .controller('appCtrl', function ($scope, $log, items) {
-      items.$on('added', function (data) {
-        $log.log('added', data);
-      });
-      items.$on('moved', function (data) {
-        $log.log('moved', data);
-      });
       items.$on('changed', function (data) {
         $log.log('changed', data);
-      });
-      items.$on('removed', function (data) {
-        $log.log('removed', data);
       });
       items.$on('loaded', function (data) {
         $log.log('loaded', data);

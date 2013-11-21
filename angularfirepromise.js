@@ -1,13 +1,19 @@
 (function (global, angular) {
   'use strict';
 
+  angular.module('firebase', []);
+
+  angular.module('firebase').factory('Firebase', [
+    '$window',
+    function ($window) {
+      return $window.Firebase;
+    }
+  ]);
+
   function construct($q, $parse, $timeout, ref) {
 
     var that, bound, index = [],
-      addedEvent = 'added', onAdded = [],
-      movedEvent = 'moved', onMoved = [],
       changedEvent = 'changed', onChanged = [],
-      removedEvent = 'removed', onRemoved = [],
       loadedEvent = 'loaded', onLoaded = [];
 
     if (!(ref instanceof global.Firebase)) {
@@ -22,7 +28,7 @@
     }
 
     function update() {
-      if (!angular.equals(that, $parse(bound.name)(bound.scope))) {
+      if (bound && !angular.equals(that, $parse(bound.name)(bound.scope))) {
         $parse(bound.name).assign(bound.scope, that);
       }
     }
@@ -30,15 +36,6 @@
     function emit(type, value) {
       var cbs = [];
       switch (type) {
-      case addedEvent:
-        cbs = onAdded;
-        break;
-      case movedEvent:
-        cbs = onMoved;
-        break;
-      case removedEvent:
-        cbs = onRemoved;
-        break;
       case changedEvent:
         cbs = onChanged;
         break;
@@ -71,34 +68,32 @@
         $timeout(function () {
           v.$priority = p;
           that[k] = v;
-          if (bound) {
-            update();
-          }
+          update();
           emit(event, that);
         });
       }
+
       function remove(snapshot, event) {
         var k = snapshot.name();
         index.splice(index.indexOf(k), 1);
         $timeout(function () {
           delete that[k];
-          if (bound) {
-            update();
-          }
+          update();
           emit(event, that);
         });
       }
+
       ref.on('child_added', function (s, pc) {
-        add(s, pc, addedEvent);
+        add(s, pc, changedEvent);
       });
       ref.on('child_moved', function (s, pc) {
-        add(s, pc, movedEvent);
+        add(s, pc, changedEvent);
       });
       ref.on('child_changed', function (s, pc) {
         add(s, pc, changedEvent);
       });
       ref.on('child_removed', function (s) {
-        remove(s, removedEvent);
+        remove(s, changedEvent);
       });
     }
 
@@ -150,26 +145,16 @@
           $timeout(function () {
             v.$priority = p;
             angular.extend(that, v);
-            if (bound) {
-              update();
-            }
+            update();
             return loadedEvent;
           })
             .then(function (event) {
               d.resolve(that);
               emit(event, that);
             });
-          switch (typeof v) {
-          case 'string':
-          case 'number':
-          case 'boolean':
-            break;
-          case 'object':
+          if (typeof v === 'object') {
             attach();
             ref.off('value');
-            break;
-          default:
-            throw 'Unexpected type from remote data ' + typeof v;
           }
         });
         return d.promise;
@@ -250,17 +235,8 @@
 
       $on: function (type, callback) {
         switch (type) {
-        case addedEvent:
-          onAdded.push(callback);
-          break;
-        case movedEvent:
-          onMoved.push(callback);
-          break;
         case changedEvent:
           onChanged.push(callback);
-          break;
-        case removedEvent:
-          onRemoved.push(callback);
           break;
         case loadedEvent:
           onLoaded.push(callback);
@@ -275,44 +251,35 @@
     return new AngularFire($q, $parse, $timeout, ref);
   }
 
-  angular.module('firebase', [])
-
-    .factory('Firebase', [
-      '$window',
-      function ($window) {
-        return $window.Firebase;
-      }
-    ])
-
-    .factory('$firebase', [
-      '$q',
-      '$parse',
-      '$timeout',
-      function ($q, $parse, $timeout) {
-        return function (ref) {
-          return construct($q, $parse, $timeout, ref);
-        };
-      }
-    ])
-
-    .filter('orderByPriority', function () {
-      return function (input) {
-        var a = [], i, j, n, k, v;
-        if (!(input && input.$index && typeof input.$index === 'function')) {
-          return input;
-        }
-        i = input.$index();
-        n = i.length;
-        if (n === 0) {
-          return input;
-        }
-        for (j = 0; j < n; j += 1) {
-          k = i[j];
-          v = input[k];
-          v.$id = k;
-          a.push(v);
-        }
-        return a;
+  angular.module('firebase').factory('$firebase', [
+    '$q',
+    '$parse',
+    '$timeout',
+    function ($q, $parse, $timeout) {
+      return function (ref) {
+        return construct($q, $parse, $timeout, ref);
       };
-    });
+    }
+  ]);
+
+  angular.module('firebase').filter('orderByPriority', function () {
+    return function (input) {
+      var a = [], i, j, n, k, v;
+      if (!(input && input.$index && typeof input.$index === 'function')) {
+        return input;
+      }
+      i = input.$index();
+      n = i.length;
+      if (n === 0) {
+        return input;
+      }
+      for (j = 0; j < n; j += 1) {
+        k = i[j];
+        v = input[k];
+        v.$id = k;
+        a.push(v);
+      }
+      return a;
+    };
+  });
 }(window, window.angular));
