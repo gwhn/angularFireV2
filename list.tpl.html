@@ -10,8 +10,7 @@
     <th>Boolean</th>
     <th>Options</th>
   </tr>
-  <!--<tr ng-repeat="item in items | orderByPriority | filter:search.query">-->
-  <tr ng-repeat="item in items | orderByPriority">
+  <tr ng-repeat="item in items | orderByPriority | filter:search.query">
     <td><a ng-href="#/item/{{item.$id}}">{{item.$id}}</a></td>
     <td>{{item.$priority}}</td>
     <td>{{item.string}}</td>

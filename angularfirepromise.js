@@ -1,4 +1,4 @@
-(function (angular) {
+(function (global, angular) {
   'use strict';
 
   function construct($q, $parse, $timeout, ref) {
@@ -10,7 +10,7 @@
       removedEvent = 'removed', onRemoved = [],
       loadedEvent = 'loaded', onLoaded = [];
 
-    if (!(ref instanceof window.Firebase)) {
+    if (!(ref instanceof global.Firebase)) {
       throw 'Provide a Firebase reference';
     }
 
@@ -102,7 +102,7 @@
       });
     }
 
-    function parse(object) {
+    function copy(object) {
       return angular.fromJson(angular.toJson(object));
     }
 
@@ -125,7 +125,7 @@
             ref.set(l);
           }, true);
         if (l) {
-          ref.update(parse(l));
+          ref.update(copy(l));
         } else {
           n.assign(scope, {});
         }
@@ -184,7 +184,7 @@
               d.resolve(construct($q, $parse, $timeout, r).$value());
             }
           };
-        r = ref.push(parse(value), cb);
+        r = ref.push(copy(value), cb);
         if (value.$priority) {
           r.setPriority(value.$priority);
         }
@@ -203,9 +203,9 @@
             }
           };
         if (o.$priority) {
-          r.setWithPriority(parse(o), o.$priority, cb);
+          r.setWithPriority(copy(o), o.$priority, cb);
         } else {
-          r.set(parse(o), cb);
+          r.set(copy(o), cb);
         }
         return d.promise;
       },
@@ -220,9 +220,9 @@
             }
           };
         if (value.$priority) {
-          ref.setWithPriority(parse(value), value.$priority, cb);
+          ref.setWithPriority(copy(value), value.$priority, cb);
         } else {
-          ref.set(parse(value), cb);
+          ref.set(copy(value), cb);
         }
         return d.promise;
       },
@@ -298,7 +298,7 @@
     .filter('orderByPriority', function () {
       return function (input) {
         var a = [], i, j, n, k, v;
-        if (!input.$index || typeof input.$index !== 'function') {
+        if (!input || !input.$index || typeof input.$index !== 'function') {
           return input;
         }
         i = input.$index();
@@ -315,4 +315,4 @@
         return a;
       };
     });
-}(window.angular));
+}(window, window.angular));
