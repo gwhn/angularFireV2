@@ -8,10 +8,12 @@
 </p>
 <p><strong>Object:</strong>{{item.object.something}}</p>
 
-<!--<div ng-show="user">-->
-<div>
-  <a ng-href="#/edit/{{id}}" class="btn btn-link">Edit</a>
-  <a ng-href="#/delete/{{id}}" class="btn btn-link">Delete</a>
-</div>
-<a ng-href="#/list" class="btn btn-link">Back</a>
+<ul class="list-inline">
+  <!--<li ng-show="user"><a ng-href="#/edit/{{id}}" class="btn btn-link">Edit</a></li>-->
+  <!--<li ng-show="user"><a ng-href="#/delete/{{id}}" class="btn btn-link">Delete</a></li>-->
+  <li><a ng-href="#/edit/{{id}}" class="btn btn-link">Edit</a></li>
+  <li><a ng-href="#/delete/{{id}}" class="btn btn-link">Delete</a></li>
+  <li><a ng-href="#/list" class="btn btn-link">Back</a></li>
+</ul>
+
 

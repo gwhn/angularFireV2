@@ -298,7 +298,7 @@
     .filter('orderByPriority', function () {
       return function (input) {
         var a = [], i, j, n, k, v;
-        if (!input || !input.$index || typeof input.$index !== 'function') {
+        if (!(input && input.$index && typeof input.$index === 'function')) {
           return input;
         }
         i = input.$index();

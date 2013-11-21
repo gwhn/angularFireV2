@@ -1,7 +1,8 @@
 <!--<a ng-show="user" ng-href="#/new" class="btn btn-link">New</a>-->
 <a ng-href="#/new" class="btn btn-link">New</a>
-<input type="search" ng-model="search.query" placeholder="search"/>
+<input type="search" ng-model="search.query" placeholder="search" class="form-control"/>
 <table class="table">
+  <thead>
   <tr>
     <th>Id</th>
     <th>Priority</th>
@@ -10,6 +11,8 @@
     <th>Boolean</th>
     <th>Options</th>
   </tr>
+  </thead>
+  <tbody>
   <tr ng-repeat="item in items | orderByPriority | filter:search.query">
     <td><a ng-href="#/item/{{item.$id}}">{{item.$id}}</a></td>
     <td>{{item.$priority}}</td>
@@ -17,13 +20,15 @@
     <td>{{item.number}}</td>
     <td>{{item.boolean}}</td>
     <td>
-      <!--<div ng-show="user">-->
-      <div>
-        <a ng-href="#/edit/{{item.$id}}" class="btn btn-link">Edit</a>
-        <a ng-href="#/delete/{{item.$id}}" class="btn btn-link">Delete</a>
-      </div>
+      <ul class="list-inline">
+        <!--<li ng-show="user"><a ng-href="#/edit/{{item.$id}}" class="btn btn-link">Edit</a></li>-->
+        <!--<li ng-show="user"><a ng-href="#/delete/{{item.$id}}" class="btn btn-link">Delete</a></li>-->
+        <li><a ng-href="#/edit/{{item.$id}}" class="btn btn-link">Edit</a></li>
+        <li><a ng-href="#/delete/{{item.$id}}" class="btn btn-link">Delete</a></li>
+      </ul>
     </td>
   </tr>
+  </tbody>
 </table>
 
 

@@ -19,11 +19,7 @@
   <a ng-hide="user" href="" ng-click="login()" class="btn btn-link">Login</a>
   <a ng-show="user" href="" ng-click="logout()" class="btn btn-link">Logout</a>
 
-  <hr/>
-
   <section ng-view></section>
-
-  <hr/>
 
   <h4>Data</h4>
   <pre>{{data | json}}</pre>
