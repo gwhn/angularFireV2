@@ -132,7 +132,7 @@
 //        $scope.item.uid = $scope.user.id;
         $scope.item.$priority = $scope.item.string;
         items.$add($scope.item).then(function (value) {
-          $location.path('/item/' + value.$key);
+          $location.path('/item/' + value.$key());
         });
       };
     })
